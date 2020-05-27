@@ -1,0 +1,120 @@
+数组问题
+并不是那么好用，链式数组
+public function index($arr,$type='def') {
+      $arr2=['data'=>[],'max'=>null,'maxid'=>null,'min'=>null,'minid'=>null,'nummax'=>10];
+      foreach ($arr as $key => $value) {
+        if($arr2['max']==null&&$arr2['min']==null){
+          $arr2['max']=$value;
+          $arr2['maxid']=$key;
+          $arr2['min']=$value;
+          $arr2['minid']=$key;
+          $arr2['data'][$key]=['data'=>$value,'maxid'=>$key,'minid'=>$key];
+        }
+        else if($arr2['max']<$value){
+          $arr2['data'][$key]=['data'=>$value,'maxid'=>$key,'minid'=>$arr2['maxid']];
+          $arr2['data'][$arr2['maxid']]['maxid']=$key;
+          $arr2['max']=$value;
+          $arr2['maxid']=$key;
+        }
+        else if($arr2['min']>$value){
+          $arr2['data'][$key]=['data'=>$value,'minid'=>$key,'maxid'=>$arr2['minid']];
+          $arr2['data'][$arr2['minid']]['minid']=$key;
+          $arr2['min']=$value;
+          $arr2['minid']=$key;
+        }
+        else if($arr2['max']>$value&&$arr2['min']<$value){
+          $arr2=$this->bettom_max_and_min($arr2['minid'],$value,$key,$arr,$arr2);
+        }
+
+        switch ($type) {
+          case 'def':
+            break;
+          // 超过最大值时，截取最大值
+          case 'max':
+              if(count($arr2['data'])>=$arr2['nummax']){
+                $maxid=$arr2['data'][$arr2['minid']]['maxid'];          
+                unset($arr2['data'][$arr2['minid']]);
+                $arr2['data'][$maxid]['minid']=$maxid;
+                $arr2['min']=$arr2['data'][$maxid]['data'];
+                $arr2['minid']=$maxid;
+              }
+            break;
+          // 超过最大值时，截取最小值
+          case 'min':
+              if(count($arr2['data'])>=$arr2['nummax']){
+                $minid=$arr2['data'][$arr2['maxid']]['minid'];          
+                unset($arr2['data'][$arr2['maxid']]);
+                $arr2['data'][$minid]['maxid']=$minid;
+                $arr2['max']=$arr2['data'][$minid]['data'];
+                $arr2['maxid']=$minid;
+              }
+            break;
+          default:
+            break;
+        }
+      }
+      $arr2=$this->tobetree($arr2,$arr2['minid']);
+      $arr2['data']['show_all_key']=null;
+      return $arr2;
+      }
+    public function tobetree($arr,$key,$num=0){
+      $arr['data'][$key]['btree_key']=$num;
+      $num=$num+1;
+      if($key==$arr['data'][$key]['maxid']){
+        return $arr;
+      }
+      return $this->tobetree($arr,$arr['data'][$key]['maxid'],$num);
+    }
+    public function bettom_max_and_min($id,$value,$key,$arr,$arr2){
+          if($arr2['data'][$id]['data']<$value){
+           return $this->bettom_max_and_min($arr2['data'][$id]['maxid'],$value,$key,$arr,$arr2);
+          }else{
+            $arr2['data'][$key]=['data'=>$value,'maxid'=>$id,'minid'=>$arr2['data'][$id]['minid']];
+            $arr2['data'][$arr2['data'][$id]['minid']]['maxid']=$key;
+            $arr2['data'][$id]['minid']=$key;
+            return $arr2;
+          }
+          
+      }
+    public function Btree_find($num,$arr,$count,$count2,$arrgo=[]){
+      if($count2==0){
+        $count2=1;
+        if(in_array($count, $arrgo)){
+          return 'error';
+        }
+      }
+      
+        preg_match('/[^}]*?"([0-9]*?)"[^}]*?btree_key":'.$count.'/', json_encode($arr,true),$return);
+        if($arr['data'][$return[1]]['data']==$num){
+          return $arr['data'][$return[1]];
+        }
+        if($arr['data'][$return[1]]['data']<$num) {
+          $newcount=(int)($count+$count2);
+          if($newcount>count($arr['data'])-1){
+            $newcount=count($arr['data'])-1;
+          }
+          array_push($arrgo, $newcount);
+          return $this->Btree_find($num,$arr,$newcount,(int)($count2/2),$arrgo);
+        }
+        if($arr['data'][$return[1]]['data']>$num){
+          $newcount=(int)($count-$count2);
+          if($newcount<0){
+            $newcount=0;
+          }
+          array_push($arrgo, $newcount);
+          return $this->Btree_find($num,$arr,$newcount,(int)($count2/2),$arrgo);
+        }
+    }
+    // $arr=[10,9,8,7,6,4,5,1,2,3,6,5,7,4,22,8,9,6,33,5,11,2,15,48,62,3,48,12,8,4,326,164,15,12,2];
+    public function test()
+    {
+      $arr=[10,9,8,7,6,4,5,1,2,3,6,5,7,4,22,8,9,6,33,5,11,2,15,48,62,3,48,12,8,4,326,164,15,12,2];
+      var_dump(time());
+      $arr2=$this->index($arr);
+      var_dump(time());
+      $return = $this->Btree_find(33,$arr2,(Int)(count($arr2['data'])-2),(Int)((count($arr2['data'])-2)/2));
+      var_dump(time());
+      var_dump($return);
+      
+
+    }
